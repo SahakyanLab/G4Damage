@@ -7,56 +7,64 @@
 
 damageAtaltDNACounts <- function(damage.types,
                                  altDNAData.path,
-                                 saveTab = TRUE,
-                                 saveTab.path){
-
+                                 strand.sensitive,
+                                 include.weight,
+                                 saveTab.path = NULL){
+  
   # To count DNA damage at DNA loci e.g. G4
   # Dependencies: data.table, countDamageOverlap, WhichOverlap (TrantoRext)
+  
+  chrs <- fread(altDNAData.path, showProgress = FALSE)[, unique(Chr)]
+  
+  rtn <- lapply(chrs, function(chr) {
+    print(chr)
+    
+    altDNAData <- fread(altDNAData.path, showProgress = FALSE, nThread = 1)[Chr == chr]
+    if (!strand.sensitive) altDNAData[, Strand := "+"]
+    
+    rtn <- altDNAData[, .(Chr, Strand, Start, End, Quality)]
+    
+    for (damage.type in damage.types){
+      print(damage.type)
+      
+      dmgData.path = paste0('raw_data/', damage.type, "/", chr, ".csv.gz")
+      if (!file.exists(dmgData.path)) next
+      
+      dmgData <- fread(dmgData.path, showProgress = FALSE, nThread = 1)
+      if (nrow(dmgData) == 0) next
+      
+      for (pdimer in
+           substr(generateCat(damage.type = damage.type), 1, 2)){
+        
+        # For single base damage e.g. 8-oxoG
+        pdimer <- sub("\\.$", "", pdimer)
+        
+        damageOverlapCounts <- countDamageOverlap(
+          damageData = dmgData[damageType == paste0(pdimer, ".", damage.type), ],
+          alternativeDNAData = altDNAData,
+          strands = if(!strand.sensitive) "sense" else c('sense', 'antisense'),
+          include.weight = include.weight)
 
-  altDNAData <- fread(altDNAData.path)
-
-  rtn <- data.frame(Chr = altDNAData$Chr,
-                    Strand = altDNAData$Strand,
-                    Start = altDNAData$Start,
-                    End = altDNAData$End,
-                    Quality = altDNAData$Quality)
-
-  for (damage.type in damage.types){
-
-    dmgData.path = paste0('raw_data/', damage.type, '_all-damage-info.csv')
-    dmgData <- fread(dmgData.path)
-
-    for (pdimer in
-         substr(generateCat(damage.type = damage.type), 1, 2)){
-
-      damageOverlapCounts <-
-        countDamageOverlap(damageData = dmgData[which(dmgData$damageType ==
-                                                        paste(pdimer,
-                                                              damage.type,
-                                                              sep=".")), ],
-                           alternativeDNAData = altDNAData)
-      rtn <-
-        eval(parse(text =
-                     paste0("cbind(rtn,",
-                            damage.type, ".", pdimer,
-                            ".sense.altDNA = altDNAData$", pdimer, ", ",
-                            damage.type, ".", pdimer,
-                            ".sense.overlap = damageOverlapCounts$sense,",
-                            damage.type, ".", pdimer,
-                            ".antisense.altDNA = altDNAData$", pdimer, ".rev, ",
-                            damage.type, ".", pdimer,
-                            ".antisense.overlap = damageOverlapCounts$antisense",
-                            ")")))
+        rtn <-
+          eval(parse(text =
+                       paste0("cbind(rtn,",
+                              damage.type, ".", pdimer,
+                              ".sense.altDNA = altDNAData$", pdimer, ", ",
+                              damage.type, ".", pdimer,
+                              ".sense.overlap = damageOverlapCounts$sense,",
+                              damage.type, ".", pdimer,
+                              ".antisense.altDNA = altDNAData$", pdimer, ".rev, ",
+                              damage.type, ".", pdimer,
+                              ".antisense.overlap = damageOverlapCounts$antisense",
+                              ")")))
+      }
     }
-
-  }
-
-  if (saveTab == TRUE){
-    write.csv(rtn, file = saveTab.path,
-              row.names = FALSE,
-              quote = FALSE)
-  }
-
+    rtn
+  })
+  rtn <- rbindlist(rtn, fill = TRUE)
+  
+  if (!is.null(saveTab.path)) fwrite(rtn, saveTab.path)
+  
   return(rtn)
 }
 

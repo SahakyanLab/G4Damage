@@ -23,10 +23,10 @@ scatterPlotInfo <- function(altDNACode,
     dmg.at.altDNA.bin <- dmg.at.altDNA[which(dmg.at.altDNA$Category==i-1),]
     damage.sites[i] <-
       eval(parse(text = paste0("sum(dmg.at.altDNA.bin$", damage.type, ".",
-                               pdimer, ".", strand, ".overlap)")))
+                               pdimer, ".", strand, ".overlap, na.rm = T)")))
     pot.sites[i] <-
       eval(parse(text = paste0("sum(dmg.at.altDNA.bin$", damage.type, ".",
-                               pdimer, ".", strand, ".altDNA)")))
+                               pdimer, ".", strand, ".altDNA, na.rm = T)")))
   }
 
   toPlot <- damage.sites/pot.sites

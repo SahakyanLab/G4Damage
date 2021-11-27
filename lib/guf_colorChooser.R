@@ -1,38 +1,24 @@
 
 #cols = c(hue_pal()(3), hue_pal(l = 80, h.start = 180)(3), 'black')
 
-colorChooser <- function(cats, ls = c(65, 80),
-                         cols = c(hue_pal(l = ls[1])(3), hue_pal(l = ls[2], h.start = 180)(3), 'black')){
+colorChooser <- function(cats){
   
   rtn <- c()
   
+  cols <- c(RColorBrewer::brewer.pal(7, "Set2"), "#864879", "#E9A6A6")
+  
   for (cat in cats){
     
-    if (cat == 'ALL'){
-      i <- 7
-    } else {
-      if (nchar(cat) < 4 || nchar(cat) > 7){#if cat has less than 4 characters, it is either "CPD" or "PP"
-        if (length(grep("CPD", cat))==0){#cat = PP
-          i <- 3
-        } else{
-          i <- 6#cat = CPD
-        }
-      } else {
-        if (length(grep("CPD", cat))==0){#cat = PP
-          if (length(grep("TT", cat))==0){#cat = TT-PP
-            i <- 1
-          } else {
-            i <- 2
-          }
-        } else{
-          if (length(grep("TT", cat))==0){#cat = TT-PP
-            i <- 4
-          } else {
-            i <- 5
-          }
-        }
-      }
-    }
+    if (grepl("CT.CPD", cat)) i <- 1
+    else if (grepl("TT.CPD", cat)) i <- 2
+    else if (grepl("TC.PP", cat)) i <- 3
+    else if (grepl("TT.PP", cat)) i <- 4
+    else if (grepl("GG.cisplatin", cat)) i <- 5
+    else if (grepl("G.oxoG", cat)) i <- 6
+    else if (grepl("NN.sonication", cat)) i <- 7
+    else if (grepl("NN.ancient", cat)) i <- 8
+    else if (grepl("NN.enzymatic", cat)) i <- 9
+    
     rtn <- c(rtn, cols[i])
   }
   return(rtn)

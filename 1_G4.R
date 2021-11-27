@@ -1,44 +1,39 @@
 ################################################################################
-# Limitation: Only damage pattern with the same length can be run together.
-
-
-################################################################################
 ## Configuration ###############################################################
 NCPU = 1
 
-altDNACode = "g4"
+altDNACode = "G4"
 altDNAStructure = "G-Quadruplex"
 
-dmg.type = "cisplatin" # "UV"  # "oxoG"
-dmg.pattern = "GG" # c("CC", "CT", "TC", "TT") # "G"
+dmg.type = "breakage" # Selection: cisplatin UV oxoG breakage
+dmg.pattern = "NN" # c("CC", "CT", "TC", "TT") G GG NN 
+strand.sensitive = F
+include.weight = T # must have weight column
 
 highLow.cutoff = 19
 bins = c(5, 10, 15, 20, 25, 30, 35, 40)
 
-chromosome.list = c(1:22, 'X', 'Y') # ignore mitochondrial dna
-
-damage.strands = c('antisense', 'sense')
-damage.types = "cisplatin" #c('CPD', 'PP')
-
+damage.strands = if (strand.sensitive) c('antisense', 'sense') else 'sense'
+damage.types = c('sonication', 'enzymatic', 'ancient') #c('CPD', 'PP') oxoG cisplatin c('sonication', 'enzymatic', 'ancient')
+combine.plot = T
 
 ## Task ########################################################################
 toDo = NULL
 
-toDo$generateTable = F
+toDo$generateTable         = F
 
-toDo$countDamages = F
+toDo$countDamages          = F
 
-toDo$scatterPlot = T
+toDo$scatterPlot           = T
 savePDF.scatter = T
 
 ## File path ###################################################################
 PQSdata.path = "raw_data/PQSdata.txt"
-dmg.data.path = "raw_data/UV_all-damage-info.csv"
 
 # Outputs
-processed.PQSdata.path = "processed_data/cisplatin_g4_data.csv"
-dmg.cnt.G4.path = "processed_data/cisplatin-damage-at-G4-counts.csv"
-plot.path = "processed_data/cisplatin-damage-at-G4-counts.pdf"
+processed.PQSdata.path = paste0("processed_data/", dmg.type, "_G4_data.csv")
+dmg.cnt.G4.path = paste0("processed_data/", dmg.type, "-damage-at-G4-counts.csv")
+plot.path = paste0("processed_data/", dmg.type, "-damage-at-G4-counts.pdf")
 
 
 ## Dependant functions #########################################################
@@ -96,7 +91,6 @@ if (toDo$generateTable){
 
   generateG4Table(G4.data.path = PQSdata.path,
                   dmg.pattern = dmg.pattern,
-                  saveTab = TRUE,
                   saveTab.path = processed.PQSdata.path)
 }
 
@@ -113,7 +107,8 @@ if (toDo$countDamages){
 
   damageAtaltDNACounts(damage.types = damage.types,
                        altDNAData.path = processed.PQSdata.path,
-                       saveTab = TRUE,
+                       strand.sensitive = strand.sensitive,
+                       include.weight = include.weight,
                        saveTab.path = dmg.cnt.G4.path)
 
 }
@@ -127,12 +122,6 @@ if (toDo$scatterPlot){
               damage.strands = damage.strands,
               dmg.at.altDNA.path = dmg.cnt.G4.path,
               ymax = 80,
-              writePDF = TRUE,
+              combine.plot,
               writePDF.path = plot.path)
 }
-
-
-
-
-
-

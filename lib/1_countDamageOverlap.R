@@ -4,7 +4,8 @@
 # strands <- c('sense', 'antisense')
 
 countDamageOverlap <- function(damageData, alternativeDNAData,
-                               strands = c('sense', 'antisense')){
+                               strands = c('sense', 'antisense'),
+                               include.weight = FALSE){
 
   ## this function is meant to take formation of alternative DNA structures
   ## and count the number of UV damage sites in the structure
@@ -32,18 +33,24 @@ countDamageOverlap <- function(damageData, alternativeDNAData,
                    start.subject = alternativeDNAData$Start,
                    end.subject = alternativeDNAData$End,
                    space.subject = paste0(alternativeDNAData$Chr, ".",
-                                         alternativeDNAData.strand))
+                                          alternativeDNAData.strand))#; stop()
 
-    rtn[[eval(parse(text = paste("'", strand, "'", sep="")))]] <-
-      unlist(lapply(1:dim(alternativeDNAData)[1], function(x, vec){
-        length(which(vec == x))
+    if (include.weight) {
+      damageData <- damageData[overlapIndices[, 1]]
+      damageData[, Subject := overlapIndices[, 2]]
+      damageData <- damageData[, .(wCount = sum(Weight)), by = Subject]
+      zeros <- damageData[, (1:nrow(alternativeDNAData))[!1:nrow(alternativeDNAData) %in% Subject]]
+      damageData <- rbind(damageData, data.table(Subject = zeros, wCount = 0))
+      setkey(damageData, Subject)
+      rtn[[strand]] <- damageData$wCount
+    } else {
+      rtn[[eval(parse(text = paste("'", strand, "'", sep="")))]] <-
+        unlist(lapply(1:dim(alternativeDNAData)[1], function(x, vec){
+          length(which(vec == x))
         }, vec = overlapIndices[, 2]))
+    }
   }
 
   return(rtn)
 
 }
-
-
-
-

@@ -1,18 +1,10 @@
 
 
-generateCat <- function(damage.type = c('PP', 'CPD', 'oxoG', 'cisplatin'),
+generateCat <- function(damage.type = c('PP', 'CPD', 'oxoG', 'cisplatin',
+                                        'sonication', 'enzymatic', 'ancient'),
                         separator = ".", first = "nt"){
   
   rtn <- c()
-  
-  # for (i in damage.type){
-  #   if (i =='PP'){
-  #     nt <- c('TC', 'TT')
-  #   } else if (i == 'CPD'){
-  #     nt <- c('CT', 'TT')
-  #   } else if (i == 'oxoG'){
-  #     nt <- c('G')
-  #   }
   
   for (i in damage.type){
     if (i == 'cisplatin'){
@@ -23,7 +15,11 @@ generateCat <- function(damage.type = c('PP', 'CPD', 'oxoG', 'cisplatin'),
       nt <- c('CT', 'TT')
     } else if (i == 'oxoG'){
       nt <- "G"
-    } 
+    } else if (i %in% c('sonication', 'ancient')) {
+      nt <- "NN"
+    } else if (i == 'enzymatic') {
+      nt <- "NN"
+    }
   
     cat <- rep("", length(nt))
     counter <- 1
