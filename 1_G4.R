@@ -1,21 +1,31 @@
 ################################################################################
+#
+# Workflow to get similar plots in the publication
+# 1. UV damage
+#    dmg.names = c('CPD', 'PP')
+#    dmg.type = "UV"
+#    dmg.pattern = c("CC", "CT", "TC", "TT")
+#    strand.sensitive = T
+# 2. 8oxoG damage
+#    dmg.names = "oxoG"
+#    dmg.type = "UV"
+#    dmg.pattern = c("CC", "CT", "TC", "TT")
+#    strand.sensitive = T
+
+#
 ## Configuration ###############################################################
 NCPU = 1
 
-altDNACode = "G4"
-altDNAStructure = "G-Quadruplex"
+dmg.names = c("sonication", "enzymatic") #c("CPD", "PP") "oxoG" "cisplatin" c("sonication", "enzymatic") "ancient"
+dmg.type = "breakage" # Selection: "cisplatin" "UV" "oxoG" "breakage"
+dmg.pattern = "NN" # c("CC", "CT", "TC", "TT") "G" "GG" "NN"
 
-dmg.type = "breakage" # Selection: cisplatin UV oxoG breakage
-dmg.pattern = "NN" # c("CC", "CT", "TC", "TT") G GG NN 
-strand.sensitive = F
-include.weight = T # must have weight column
+strand.sensitive = T
+dmg.strands = if (strand.sensitive) c("antisense", "sense") else "sense"
 
 highLow.cutoff = 19
 bins = c(5, 10, 15, 20, 25, 30, 35, 40)
 
-damage.strands = if (strand.sensitive) c('antisense', 'sense') else 'sense'
-damage.types = c('sonication', 'enzymatic', 'ancient') #c('CPD', 'PP') oxoG cisplatin c('sonication', 'enzymatic', 'ancient')
-combine.plot = T
 
 ## Task ########################################################################
 toDo = NULL
@@ -23,8 +33,10 @@ toDo = NULL
 toDo$generateTable         = F
 
 toDo$countDamages          = F
+include.weight = F # must have weight column
 
 toDo$scatterPlot           = T
+combine.plot = T
 savePDF.scatter = T
 
 ## File path ###################################################################
@@ -39,7 +51,7 @@ plot.path = paste0("processed_data/", dmg.type, "-damage-at-G4-counts.pdf")
 ## Dependant functions #########################################################
 source("lib/1_generateG4Table.R")
 source("lib/1_findOligonucleotideCounts.R")
-source("lib/1_DamageAtAltDNACounts.R")
+source("lib/1_DamageAtG4Counts.R")
 source("lib/1_countDamageOverlap.R")
 source("lib/1_plotScatter.R")
 source("lib/1_scatterPlotInfo.R")
@@ -105,22 +117,20 @@ if (toDo$countDamages){
   #  <dmg_type>.<dmg_nt>.antisense.overlap  [count]
   #  ... (add more columns for more damage type and/or damage nucleotide)
 
-  damageAtaltDNACounts(damage.types = damage.types,
-                       altDNAData.path = processed.PQSdata.path,
-                       strand.sensitive = strand.sensitive,
-                       include.weight = include.weight,
-                       saveTab.path = dmg.cnt.G4.path)
+  damageAtG4Counts(dmg.names = dmg.names,
+                   G4.path = processed.PQSdata.path,
+                   strand.sensitive = strand.sensitive,
+                   include.weight = include.weight,
+                   saveTab.path = dmg.cnt.G4.path)
 
 }
 
 #-------------------------------------------------------------------------------
 if (toDo$scatterPlot){
 
-  plotScatter(altDNACode = altDNACode,
-              altDNAStructure = altDNAStructure,
-              damage.types = damage.types,
-              damage.strands = damage.strands,
-              dmg.at.altDNA.path = dmg.cnt.G4.path,
+  plotScatter(dmg.names = dmg.names,
+              dmg.strands = dmg.strands,
+              dmg.at.G4.path = dmg.cnt.G4.path,
               ymax = 80,
               combine.plot,
               writePDF.path = plot.path)

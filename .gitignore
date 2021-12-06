@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 raw_data/
+!raw_data/PQSdata.txt
 processed_data/
 *.Rproj
 temp/

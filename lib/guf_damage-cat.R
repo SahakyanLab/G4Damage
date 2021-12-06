@@ -1,12 +1,10 @@
-
-
-generateCat <- function(damage.type = c('PP', 'CPD', 'oxoG', 'cisplatin',
+generateCat <- function(dmg.name = c('PP', 'CPD', 'oxoG', 'cisplatin',
                                         'sonication', 'enzymatic', 'ancient'),
                         separator = ".", first = "nt"){
   
   rtn <- c()
   
-  for (i in damage.type){
+  for (i in dmg.name){
     if (i == 'cisplatin'){
       nt <- c('GG')
     } else if (i == 'PP'){
@@ -26,7 +24,7 @@ generateCat <- function(damage.type = c('PP', 'CPD', 'oxoG', 'cisplatin',
     for (j in nt){
       if (first == "nt"){
         cat[counter] <- paste(j, separator, i, sep="")
-      } else if (first == "damage.type"){
+      } else if (first == "dmg.name"){
         cat[counter] <- paste(i, separator, j, sep="")
       }
       counter <- counter+1
