@@ -4,21 +4,32 @@
 # 1. UV damage
 #    dmg.names = c('CPD', 'PP')
 #    dmg.type = "UV"
-#    dmg.pattern = c("CC", "CT", "TC", "TT")
+#    dmg.pattern = c("CT", "TC", "TT")
 #    strand.sensitive = T
-# 2. 8oxoG damage
+#    combine.plot = F
+# 2. cisplatin damage
+#    dmg.names = "cisplatin"
+#    dmg.type = "cisplatin"
+#    dmg.pattern = "GG"
+#    strand.sensitive = T
+# 3. 8oxoG damage
 #    dmg.names = "oxoG"
-#    dmg.type = "UV"
-#    dmg.pattern = c("CC", "CT", "TC", "TT")
+#    dmg.type = "oxoG"
+#    dmg.pattern = "G"
 #    strand.sensitive = T
-
+# 4. breakage damage
+#    dmg.names = c("sonication", "enzymatic", "ancient")
+#    dmg.type = "breakage"
+#    dmg.pattern = "NN"
+#    strand.sensitive = F
+#    combine.plot = T
 #
 ## Configuration ###############################################################
 NCPU = 1
 
 dmg.names = c("sonication", "enzymatic") #c("CPD", "PP") "oxoG" "cisplatin" c("sonication", "enzymatic") "ancient"
 dmg.type = "breakage" # Selection: "cisplatin" "UV" "oxoG" "breakage"
-dmg.pattern = "NN" # c("CC", "CT", "TC", "TT") "G" "GG" "NN"
+dmg.pattern = "NN" # c("CT", "TC", "TT") "G" "GG" "NN"
 
 strand.sensitive = T
 dmg.strands = if (strand.sensitive) c("antisense", "sense") else "sense"
@@ -36,7 +47,7 @@ toDo$countDamages          = F
 include.weight = F # must have weight column
 
 toDo$scatterPlot           = T
-combine.plot = T
+combine.plot = F
 savePDF.scatter = T
 
 ## File path ###################################################################
