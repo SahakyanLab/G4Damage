@@ -20,7 +20,7 @@ generateG4Table <- function(G4.data.path, dmg.pattern,
   G4.data <- G4.data[which(is.na(G4.data$mm) == FALSE),]
   #print(G4.data)
   
-  if (dmg.pattern != "NN") {
+  if (!"NN" %in% dmg.pattern) {
     countList <- findOligonuceleotideCounts(sequences = G4.data$relseq,
                                             oligonucleotides = dmg.pattern)
   } else {

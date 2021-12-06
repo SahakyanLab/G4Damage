@@ -2,8 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-raw_data/
-!raw_data/PQSdata.txt
+raw_data/*
+!raw_data/PQSdata.txt.gz
 processed_data/
 *.Rproj
 temp/
