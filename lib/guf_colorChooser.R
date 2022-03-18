@@ -4,8 +4,8 @@
 colorChooser <- function(cats){
   
   rtn <- c()
-  
-  cols <- c("#E77D72", "#53B74C", "#F2A49A", "#6BE079", "#6F9BF8", "#FFD92F", "#A65628", "#984EA3", "#171717")
+
+  cols <- c("#E77D72", "#53B74C", "#F2A49A", "#6BE079", "#6F9BF8", "#F4BF62", "#9C5A33", "#984EA3", "#171717")
   
   for (cat in cats){
     

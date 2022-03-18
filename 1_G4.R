@@ -27,15 +27,16 @@
 ## Configuration ###############################################################
 NCPU = 1
 
-dmg.names = c("sonication", "enzymatic") #c("CPD", "PP") "oxoG" "cisplatin" c("sonication", "enzymatic") "ancient"
+dmg.names = c("sonication", "enzymatic", "ancient") #c("CPD", "PP") "oxoG" "cisplatin" c("sonication", "enzymatic") "ancient"
 dmg.type = "breakage" # Selection: "cisplatin" "UV" "oxoG" "breakage"
 dmg.pattern = "NN" # c("CT", "TC", "TT") "G" "GG" "NN"
 
-strand.sensitive = T
-dmg.strands = if (strand.sensitive) c("antisense", "sense") else "sense"
+strand.sensitive = F
+dmg.strands <- if (strand.sensitive) c("sense", "antisense") else "sense"
 
 highLow.cutoff = 19
 bins = c(5, 10, 15, 20, 25, 30, 35, 40)
+bins = 19
 
 
 ## Task ########################################################################
@@ -46,12 +47,26 @@ toDo$generateTable         = F
 toDo$countDamages          = F
 include.weight = F # must have weight column
 
-toDo$scatterPlot           = T
+toDo$scatterPlot           = F
+raw.counts = F
+cal.p.vals = T
 combine.plot = F
-savePDF.scatter = T
+ymax = 80
+
+toDo$countUVonRigidLoop    = T
+
+toDo$plotG4rep             = F
+
+toDo$plotCommonGC          = F
+plotGCdist = F
+GC.range = c(0.68, 0.72)
+
+toDo$compareG4mapMethods   = F
 
 ## File path ###################################################################
-PQSdata.path = "raw_data/PQSdata.txt"
+PQSdata.path = "raw_data/PQSdata.txt.gz"
+G4.hunter.scores.path = "raw_data/G4_hunter_scores.csv"
+KMnO4.G4.path = "raw_data/Raji_ssDNA_enriched_Quadruplex.bed.gz"
 
 # Outputs
 processed.PQSdata.path = paste0("processed_data/", dmg.type, "_G4_data.csv")
@@ -66,13 +81,19 @@ source("lib/1_DamageAtG4Counts.R")
 source("lib/1_countDamageOverlap.R")
 source("lib/1_plotScatter.R")
 source("lib/1_scatterPlotInfo.R")
+source("lib/1_cntUVdmgOnRigidLoop.R")
+source("lib/1_plotRep.R")
+source("lib/1_plotGC.R")
+source("lib/1_plotCommonGC.R")
+source("lib/1_compareG4Hunter.R")
+source("lib/1_compareKMnO4seq.R")
 
 source("lib/guf_colorChooser.R")
 source("lib/guf_damage-cat.R")
 
 # Dependant functions from the TrantorR library
 TrantoRLib <- "lib/TrantoRextr/"
-source(paste(TrantoRLib, "GEN_WhichOverlap.R", sep=""))
+source(paste(TrantoRLib, "GEN_WhichOverlap.R", sep = ""))
 
 ## Dependant libraries #########################################################
 suppressPackageStartupMessages( library(doParallel)    )
@@ -80,10 +101,8 @@ suppressPackageStartupMessages( library(Biostrings)    )
 suppressPackageStartupMessages( library(GenomicRanges) )
 suppressPackageStartupMessages( library(data.table)    )
 suppressPackageStartupMessages( library(scales    )    )
-
-
-#suppressPackageStartupMessages( library(venneuler)     )
-#suppressPackageStartupMessages( library(stringi)       )
+suppressPackageStartupMessages( library(stringi)       )
+suppressPackageStartupMessages( library(vioplot)       )
 
 ## Parallel setup ##############################################################
 #source("lib/GEN_doParallelsetup.R")
@@ -142,7 +161,77 @@ if (toDo$scatterPlot){
   plotScatter(dmg.names = dmg.names,
               dmg.strands = dmg.strands,
               dmg.at.G4.path = dmg.cnt.G4.path,
-              ymax = 80,
-              combine.plot,
-              writePDF.path = plot.path)
+              bins = bins,
+              raw.counts = raw.counts,
+              cal.p.vals = cal.p.vals,
+              ymax = ymax,
+              combine.plot = combine.plot,
+              writePDF.height = 6,
+              writePDF.width = 8,
+              writePDF.path = plot.path
+              )
+  
 }
+
+#-------------------------------------------------------------------------------
+if (toDo$countUVonRigidLoop){
+  
+  cntUVdmgOnRigidLoop()
+}
+
+#-------------------------------------------------------------------------------
+if (toDo$plotG4rep){
+  
+  plotRep(dmg.names = dmg.names,
+          dmg.strands = dmg.strands,
+          dmg.at.G4.path = dmg.cnt.G4.path,
+          G4.data.path = PQSdata.path,
+          bins = 19,
+          writePDF.height = 7,
+          writePDF.width = 4 * length(generateCat(dmg.names)),
+          writePDF.path = sub(".pdf", "-rep.pdf", plot.path))
+}
+
+#-------------------------------------------------------------------------------
+if (toDo$plotCommonGC){
+  
+  if (plotGCdist) {
+    plotGC(G4.data.path = PQSdata.path,
+           bins = bins,
+           writePDF.height = 6,
+           writePDF.width = 8,
+           writePDF.path = "processed_data/G4_GC.pdf")
+  }
+  
+  plotCommonGC(G4.data.path = PQSdata.path,
+               GC.range = GC.range,
+               dmg.names = dmg.names,
+               dmg.strands = dmg.strands,
+               dmg.at.G4.path = dmg.cnt.G4.path,
+               bins = bins,
+               raw.counts = raw.counts,
+               cal.p.vals = cal.p.vals,
+               ymax = ymax,
+               combine.plot = combine.plot,
+               writePDF.height = ifelse(length(dmg.strands) == 2, 6, 3),
+               writePDF.width = 8,
+               writePDF.path = sub(".pdf", "-GC-filtered.pdf", plot.path))
+}
+
+#-------------------------------------------------------------------------------
+if (toDo$compareG4mapMethods){
+  
+  pdf("processed_data/G4_methods.pdf", height = 6, width = 8)
+  
+  compareG4Hunter(G4.data.path = PQSdata.path,
+                  G4.hunter.scores.path = G4.hunter.scores.path,
+                  bins = bins)
+  compareKMnO4seq(G4.data.path = PQSdata.path,
+                  KMnO4.G4.path = KMnO4.G4.path,
+                  bins = bins)
+  
+  while(!(names(dev.cur()) %in% c('null device', 'RStudioGD'))){
+    dev.off()
+  }
+}
+

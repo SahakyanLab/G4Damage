@@ -1,16 +1,24 @@
 plotScatter <- function(dmg.names = c('PP', 'CPD'),
                         dmg.strands = c('sense', 'antisense'),
                         dmg.at.G4.path,
+                        bins,
+                        raw.counts = FALSE,
+                        cal.p.vals = FALSE,
                         ymax = 50,
                         combine.plot = FALSE,
                         writePDF.height = 6,
                         writePDF.width = 8,
-                        writePDF.path = NULL,
-                        ...){
+                        writePDF.path = NULL){
 
 
   # Dependencies: data.table, "GEN_scatterPlotInfo.R"
 
+  # if (!missing(dmg.at.G4.path)) {
+  #   dmg.at.G4 <- fread(dmg.at.G4.path)
+  # } else {
+  #   dmg.at.G4 <- dmg.at.G4.dt
+  # }
+  
   dmg.at.G4 <- fread(dmg.at.G4.path)
 
   dstrand.type <- function(s){
@@ -41,7 +49,7 @@ plotScatter <- function(dmg.names = c('PP', 'CPD'),
       par(mar=c(5.1, 7.1, 4.1, 10.1), xpd=TRUE)
 
       plot(NULL,
-           xlim = c(0,length(bins)), ylim = c(-ymax, ymax),
+           xlim = c(0, length(bins)), ylim = c(-ymax, ymax),
            main = paste(dmg.name, " Damage in G-Quadruplex Sites", sep = ""),
            ylab = paste0("Damage propensity change (%)"),
            xlab = "G4 stability score (mm%)",
@@ -49,7 +57,7 @@ plotScatter <- function(dmg.names = c('PP', 'CPD'),
 
       xs <- 0:length(bins)
 
-      axis.lab <- paste0("(", as.character(c(0,bins)), ", ",
+      axis.lab <- paste0("(", as.character(c(0, bins)), ", ",
                          as.character(c(bins, 100)), "]")
       axis.lab[1] <- sub("\\(", "[", axis.lab[1])
       axis(side = 1, at=0:length(bins), labels = NA)
@@ -61,31 +69,73 @@ plotScatter <- function(dmg.names = c('PP', 'CPD'),
            cex = 0.8)
     }
 
+    sig.plots <- NULL
     for (pdimer in pdimers){
 
       for (dmg.strand in dmg.strands){
-
+        
+        cat(dmg.name, "-", pdimer, " at ", dmg.strand, " stand\n", sep = "")
+        
         toPlot <- scatterPlotInfo(dmg.at.G4 = dmg.at.G4,
                                   strand = dmg.strand,
-                                  dmg.name = dmg.name, pdimer = pdimer,
-                                  bins = bins) #, ...)
-
-        points(xs, toPlot,
+                                  dmg.name = dmg.name,
+                                  pdimer = pdimer,
+                                  bins = bins,
+                                  raw.counts = raw.counts,
+                                  cal.p.vals = cal.p.vals)
+        cat("\n")
+        sig.plots[[paste0(pdimer, "-", dmg.strand)]] <- toPlot
+        
+        print(toPlot[[1]])
+        
+        points(xs, toPlot[[1]],
                col = colorChooser(paste(pdimer, dmg.name, sep=".")),
-               type="l", lty = dstrand.type(dmg.strand), lwd = 3)
-        points(xs, toPlot,
+               type = "l", lty = dstrand.type(dmg.strand), lwd = 3)
+        points(xs, toPlot[[1]],
                col = colorChooser(paste(pdimer, dmg.name, sep=".")),
                pch = 19)
 
         fwrite(data.table(damage = paste0(dmg.name, "-", pdimer),
                           strand = dmg.strand,
                           bin = xs,
-                          Percent = toPlot),
+                          Percent = toPlot[[1]]),
                point.data, sep = "\t", append = TRUE)
 
       }
 
     }
+
+    if (cal.p.vals) {
+      sig.codes <- c("***" = 0.001, "**" = 0.01, "*" = 0.05, " " = 1)
+      for (pdimer in pdimers){
+        for (dmg.strand in dmg.strands){
+          #a <<- sig.plots[[paste0(pdimer, "-", dmg.strand)]]
+          text(x = xs, y = sig.plots[[paste0(pdimer, "-", dmg.strand)]][[1]],
+               labels = sapply(sig.plots[[paste0(pdimer, "-", dmg.strand)]][[3]],
+                               function(p) {
+                                 s <- sig.codes[p <= sig.codes] |> names()
+                                 s[1]
+                               }))
+          text(x = xs, y = sig.plots[[paste0(pdimer, "-", dmg.strand)]][[1]],
+               labels = sapply(sig.plots[[paste0(pdimer, "-", dmg.strand)]][[4]],
+                               function(p) {
+                                 s <- sig.codes[p <= sig.codes] |> names()
+                                 s[1]
+                               }),
+               #pos = 2,
+               adj = c(1.5, NA),
+               col = "grey50")
+          text(x = xs[length(xs)],
+               y = sig.plots[[paste0(pdimer, "-", dmg.strand)]][[1]][length(xs)],
+               labels = names(sig.codes[
+                 sig.plots[[paste0(pdimer, "-", dmg.strand)]][[2]] <= sig.codes])[1],
+               #pos = 4,
+               adj = c(-0.5, NA),
+               col = "grey")
+        }
+      }
+    }
+    
 
     if (combine.plot) {
       lab <- paste0(pdimers, "-", strsplit(cats, "\\.")[[1]][2])

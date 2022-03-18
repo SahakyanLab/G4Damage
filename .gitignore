@@ -7,3 +7,4 @@ raw_data/*
 processed_data/
 *.Rproj
 temp/
+misc
